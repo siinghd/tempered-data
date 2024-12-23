@@ -1,24 +1,29 @@
-import express from "express";
-import cors from "cors";
+import cors from 'cors';
+import express from 'express';
+import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
+import dataRoutes from './routes/data';
 
-const PORT = 8080;
 const app = express();
-const database = { data: "Hello World" };
 
-app.use(cors());
+app.use(helmet());
+app.use(
+  cors({
+    origin: process.env.ALLOWED_ORIGIN || 'http://localhost:3000',
+    methods: ['GET', 'POST'],
+    credentials: true,
+  })
+);
+
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: { error: 'Too many requests' },
+  })
+);
+
 app.use(express.json());
+app.use('/data', dataRoutes);
 
-// Routes
-
-app.get("/", (req, res) => {
-  res.json(database);
-});
-
-app.post("/", (req, res) => {
-  database.data = req.body.data;
-  res.sendStatus(200);
-});
-
-app.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
-});
+export default app;
